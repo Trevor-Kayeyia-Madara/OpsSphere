@@ -7,14 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const AuditContext = require('./core/middleware/AuditContext');
 
-// Security middleware  
-app.use(helmet());
 
-app.use(rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 60,             // max 60 requests per minute
-  message: 'Too many requests, please try again later'
-}));
 
 const app = express();
 app.use(express.json());
@@ -34,6 +27,15 @@ app.get('/api/test', (req, res) => {
 app.get('/api/incidents', authorize('admin', 'responder'),(req, res) => {
 
 });
+
+// Security middleware  
+app.use(helmet());
+
+app.use(rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,             // max 60 requests per minute
+  message: 'Too many requests, please try again later'
+}));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
