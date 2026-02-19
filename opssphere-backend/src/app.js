@@ -6,6 +6,9 @@ const authorize = require('./core/middleware/authorize');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const AuditContext = require('./core/middleware/AuditContext');
+const authRoutes = require('./modules/auth/auth.routes');
+const incidentRoutes = require('./modules/incidents/incident.routes');
+const auditRoutes = require('./modules/audit/audit.routes');
 
 
 
@@ -19,13 +22,14 @@ connectDB();
 // Use tenant resolver middleware
 app.use(tenantResolver);
 
-// Example route
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/incidents', incidentRoutes);
+app.use('/api/auditlogs', auditRoutes);
+
+// Health check
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'Tenant resolved', tenant: req.tenant.name });
-});
-
-app.get('/api/incidents', authorize('admin', 'responder'),(req, res) => {
-
+  res.json({ message: 'OpsSphere Backend Running', tenant: req.tenant });
 });
 
 // Security middleware  
