@@ -1,45 +1,89 @@
 require('dotenv').config();
+
 const express = require('express');
-const connectDB = require('./core/database/mongoose');
-const tenantResolver = require('./core/middleware/tenantResolver');
-const authorize = require('./core/middleware/authorize');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+
+const connectDB = require('./core/database/mongoose');
+const tenantResolver = require('./core/middleware/tenantResolver');
 const AuditContext = require('./core/middleware/AuditContext');
+
 const authRoutes = require('./modules/auth/auth.routes');
 const incidentRoutes = require('./modules/incidents/incident.routes');
 const auditRoutes = require('./modules/audit/audit.routes');
 
-
-
 const app = express();
-app.use(express.json());
-app.use(AuditContext);
 
-// Connect to MongoDB
+/* =========================
+   1️⃣ CONNECT DATABASE
+========================= */
 connectDB();
 
-// Use tenant resolver middleware
+/* =========================
+   2️⃣ SECURITY MIDDLEWARE
+========================= */
+app.use(helmet());
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later'
+  }
+}));
+
+/* =========================
+   3️⃣ BODY PARSING
+========================= */
+app.use(express.json());
+
+/* =========================
+   4️⃣ CONTEXT MIDDLEWARE
+========================= */
+app.use(AuditContext);
 app.use(tenantResolver);
 
-// Routes
+/* =========================
+   5️⃣ ROUTES
+========================= */
 app.use('/api/auth', authRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/auditlogs', auditRoutes);
 
-// Health check
+/* =========================
+   6️⃣ HEALTH CHECK
+========================= */
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'OpsSphere Backend Running', tenant: req.tenant });
+  res.status(200).json({
+    success: true,
+    message: 'OpsSphere Backend Running',
+    tenant: req.tenant || null
+  });
 });
 
-// Security middleware  
-app.use(helmet());
+/* =========================
+   7️⃣ 404 HANDLER
+========================= */
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
 
-app.use(rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 60,             // max 60 requests per minute
-  message: 'Too many requests, please try again later'
-}));
+/* =========================
+   8️⃣ GLOBAL ERROR HANDLER
+========================= */
+app.use((err, req, res, next) => {
+  console.error('Global Error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error'
+  });
+});
 
+/* =========================
+   9️⃣ START SERVER
+========================= */
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
