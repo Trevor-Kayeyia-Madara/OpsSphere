@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authorize = require('../../core/middleware/authorize');
 const {createIncident, getIncidents, getIncidentStats, getIncidentHeatmap, getIncidentTrends, getAssignedWorkload} = require('./services/incident.service');
-
+const { success, error } = require('../../core/utils/response');
 
 router.post('/', authorize('member','responder','admin'), async (req, res) => {
   try {

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('./auth.service');
+const { success, error } = require('../../core/utils/response');
 
 router.post('/register', async (req, res) => {
   try {
@@ -14,9 +15,9 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const result = await loginUser(req.body);
-    res.json(result);
+    success(res, result, 'User logged in successfully');
   } catch (err) {
-    res.status(401).json({ message: err.message });
+    error(res, err.message, 401);
   }
 });
 
