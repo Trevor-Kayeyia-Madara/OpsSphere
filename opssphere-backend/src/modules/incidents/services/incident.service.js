@@ -16,6 +16,15 @@ const createIncident = async (tenantId, reportedBy, incidentData, auditContext) 
   return incident;
 };
 
+const getIncidentsForDashboard = async (user) => {
+  const tenantId = user.tenantId;
+  if (user.role === 'member') {
+    throw new Error('Access denied for dashboard data');
+  }
+  // Filter by tenant for responder/admin
+  return Incident.find({ tenantId });
+};
+
 // Stats by status, priority, category
 const getIncidentStats = async (user) => {
   const tenantId = mongoose.Types.ObjectId(user.tenantId);
