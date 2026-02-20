@@ -4,15 +4,26 @@ const tenantResolver = async (req, res, next) => {
   try {
     const host = req.headers.host;
 
-    // LOCALHOST TESTING — skip subdomain logic
-    if (host.includes('localhost')) {
-      req.tenant = null;
-      return next();
-    }
+   if (host.includes('localhost')) {
+  let org = await Organization.findOne();
+  if (!org) {
+    org = await Organization.create({
+      name: "Local Dummy Tenant",
+      subdomain: "localtenant",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
+  req.tenant = org;
 
-    // Extract subdomain
+  // Make dummy tenant ID globally available for auth service
+  global.dummyTenantId = org._id;
+
+  return next();
+}
+
+    // Production subdomain logic
     const subdomain = host.split('.')[0];
-
     const org = await Organization.findOne({ subdomain });
 
     if (!org) {

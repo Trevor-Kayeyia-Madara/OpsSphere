@@ -25,15 +25,14 @@ const incidentSchema = new mongoose.Schema({
 incidentSchema.index({ tenantId: 1, status: 1 });
 incidentSchema.index({ location: '2dsphere' });
 
-// Pre-save hook for auditing
-incidentSchema.pre('save', async function(next) {
+incidentSchema.pre('save', async function() {
   try {
     const isNew = this.isNew;
     const previous = this._previous || null;
 
     await AuditLog.create({
       tenantId: this.tenantId,
-      userId: this.reportedBy || this.assignedTo, // whoever is performing action
+      userId: this.reportedBy || this.assignedTo,
       action: isNew ? 'create' : 'update',
       entityType: 'Incident',
       entityId: this._id,
@@ -42,10 +41,9 @@ incidentSchema.pre('save', async function(next) {
       ipAddress: this._ip || null,
       userAgent: this._userAgent || null
     });
-    next();
   } catch (err) {
     console.error('Audit log error:', err);
-    next();
+    // no next() here
   }
 });
 
