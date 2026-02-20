@@ -1,32 +1,31 @@
+// incident.routes.js
 const express = require('express');
 const router = express.Router();
 const authorize = require('../../core/middleware/authorize');
-const { createIncident } = require('./incident.service');
-const Incident = require('./incident.model');
+const { createIncident, getIncidents } = require('./services/incident.service');
+const { success, error } = require('../../core/utils/response');
 
 router.post('/', authorize('member','responder','admin'), async (req, res) => {
   try {
-    const incident = new Incident({
-      ...req.body,
-      tenantId: req.user.tenantId,
-      reportedBy: req.user.userId
+    const incident = await createIncident({
+      body: req.body,
+      user: req.user,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
     });
-
-    incident._userId = req.user.userId;
-    incident._ip = req.ip;
-    incident._userAgent = req.headers['user-agent'];
-
-    await incident.save();
-
-    res.status(201).json(incident);
+    success(res, incident, 'Incident created');
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    error(res, err.message);
   }
 });
 
 router.get('/', authorize('responder','admin'), async (req, res) => {
-  const incidents = await Incident.find({ tenantId: req.user.tenantId });
-  res.json(incidents);
+  try {
+    const incidents = await getIncidents(req.user);
+    success(res, incidents, 'Incidents fetched');
+  } catch (err) {
+    error(res, err.message);
+  }
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
-const Incident = require('./incident.model');
+const Incident = require('../incident.model');
 
 const createIncident = async (tenantId, reportedBy, incidentData, auditContext) => {
   const incident = new Incident({
